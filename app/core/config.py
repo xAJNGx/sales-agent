@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     mongodb_uri:str = ""
     mongodb_db_name: str = "sales_agent"
     
+    google_service_account_json: str = ""
+    google_calendar_id: str = ""
+    
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""
@@ -53,26 +56,26 @@ TENANTS: dict[tuple[str, str], TenantConfig] = {
     ("org_1", "branch_a"): TenantConfig(
         org_id="org_1",
         branch_id="branch_a",
-        display_name="Acme Corp — Downtown Branch",
+        display_name="AJNG Corp — KTM Branch",
         pinecone_namespace="org_1__branch_a",
-        google_calendar_id="acme-downtown@group.calendar.google.com",
-        from_email="downtown@acmecorp.com",
+        google_calendar_id="206a991a8081eb369e5cc6e8921b4a212a4667fd538828c0cf4e9d1a2ac04077@group.calendar.google.com",
+        from_email="noreply@anujnandagorkhali.com.np",
     ),
     ("org_1", "branch_b"): TenantConfig(
         org_id="org_1",
         branch_id="branch_b",
-        display_name="Acme Corp — Uptown Branch",
+        display_name="AJNG Corp — PKR Branch",
         pinecone_namespace="org_1__branch_b",
-        google_calendar_id="acme-uptown@group.calendar.google.com",
-        from_email="uptown@acmecorp.com",
+        google_calendar_id="206a991a8081eb369e5cc6e8921b4a212a4667fd538828c0cf4e9d1a2ac04077@group.calendar.google.com",
+        from_email="noreply@anujnandagorkhali.com.np",
     ),
     ("org_2", "branch_a"): TenantConfig(
         org_id="org_2",
         branch_id="branch_a",
-        display_name="Globex Inc — Main Branch",
+        display_name="AJNG2 Inc — Main Branch",
         pinecone_namespace="org_2__branch_a",
-        google_calendar_id="globex-main@group.calendar.google.com",
-        from_email="hello@globex.com",
+        google_calendar_id="206a991a8081eb369e5cc6e8921b4a212a4667fd538828c0cf4e9d1a2ac04077@group.calendar.google.com",
+        from_email="noreply@anujnandagorkhali.com.np",
     ),
 }
 

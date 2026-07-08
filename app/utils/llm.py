@@ -51,7 +51,14 @@ async def chat_json(system_prompt: str, user_content: str) -> dict:
             "think": False
         }
     )
-
+    content = resp.choices[0].message.content
+    print(repr(content))
+    try:
+        return json.loads(content)
+    except Exception:
+        print("Raw response:")
+        print(repr(content))
+        raise
     return json.loads(
         resp.choices[0].message.content
     )
@@ -76,7 +83,8 @@ async def chat_text(system_prompt: str, messages: list[dict]) -> str:
             "think": False
         }
     )
-
+    print("___"*20)
+    print(resp.choices[0].message.content)
     return resp.choices[0].message.content
 
 async def embed_text(text: str) -> list[float]:
@@ -96,31 +104,41 @@ if __name__ == "__main__":
 
     async def main():
 
-        response = await chat_text(
-            system_prompt="You are a helpful AI assistant.",
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Explain RAG in 3 sentences."
-                }
-            ],
-        )
+        # response = await chat_text(
+        #     system_prompt="You are a helpful AI assistant.",
+        #     messages=[
+        #         {
+        #             "role": "user",
+        #             "content": "Explain RAG in 3 sentences."
+        #         }
+        #     ],
+        # )
 
-        print(response)
+        # print(response)
+        from datetime import date
 
+        system_prompt = f"""
+        Extract booking details from the user's latest message.
+
+        Today is {date.today():%Y-%m-%d}. Resolve relative dates (e.g. "tomorrow", "next Monday") against this date.
+
+        Return ONLY a valid JSON object. Include only fields you can confidently determine.
+
+        Schema:
+        {{
+        "service": string,
+        "date": "YYYY-MM-DD",
+        "time": "HH:MM",
+        "duration_minutes": integer,
+        "email": string
+        }}
+
+        Do not invent values. Omit unknown fields. No markdown or explanations.
+        """
         json_response = await chat_json(
-            system_prompt="""
-            Extract information from the user message.
-            Return JSON with:
-            {
-                "name": string,
-                "product": string,
-                "intent": string
-            }
-            """,
+            system_prompt=system_prompt,
             user_content="""
-            My name is Anuj.
-            I want to buy a laptop for AI development.
+           I'd like to book a demo for tomorrow at 3 PM.
             """,
         )
 

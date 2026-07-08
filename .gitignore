@@ -1,3 +1,9 @@
 .venv
 .env
 __pycache__
+
+# Ignore google service Zone.Identifier files
+*.Zone.Identifier
+*Zone.Identifier
+
+sales_agent.json
