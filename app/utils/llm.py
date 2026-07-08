@@ -2,7 +2,7 @@
 Async wrapper around Ollama OpenAI-compatible API.
 """
 
-from __future__ import annotations
+
 
 import json
 
@@ -11,19 +11,30 @@ from openai import AsyncOpenAI
 from app.core.config import settings
 
 
-_client: AsyncOpenAI | None = None
+_openai_client : AsyncOpenAI | None = None
+_ollama_client : AsyncOpenAI | None = None
 
 
-def _get_client() -> AsyncOpenAI:
-    global _client
+def _get_client_ollama() -> AsyncOpenAI:
+    global _ollama_client
 
-    if _client is None:
-        _client = AsyncOpenAI(
+    if _ollama_client is None:
+        _ollama_client = AsyncOpenAI(
             api_key="ollama",
             base_url=settings.ollama_base_url,
         )
 
-    return _client
+    return _ollama_client
+
+def _get_client() -> AsyncOpenAI:
+    global _openai_client
+
+    if _openai_client is None:
+        _openai_client = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+        )
+
+    return _openai_client
 
 
 async def chat_json(system_prompt: str, user_content: str) -> dict:
@@ -32,7 +43,8 @@ async def chat_json(system_prompt: str, user_content: str) -> dict:
     client = _get_client()
 
     resp = await client.chat.completions.create(
-        model="qwen3.5:4b",
+        # model="qwen3.5:4b", #uncomment for ollama 
+        model=settings.openai_model,
         messages=[
             {
                 "role": "system",
@@ -47,12 +59,11 @@ async def chat_json(system_prompt: str, user_content: str) -> dict:
             "type": "json_object"
         },
         temperature=0,
-        extra_body={
-            "think": False
-        }
+        # extra_body={
+        #     "think": False
+        # }
     )
     content = resp.choices[0].message.content
-    print(repr(content))
     try:
         return json.loads(content)
     except Exception:
@@ -70,7 +81,8 @@ async def chat_text(system_prompt: str, messages: list[dict]) -> str:
     client = _get_client()
 
     resp = await client.chat.completions.create(
-        model="qwen3.5:4b",
+        # model="qwen3.5:4b", #uncomment for ollama 
+        model=settings.openai_model,
         messages=[
             {
                 "role": "system",
@@ -79,17 +91,15 @@ async def chat_text(system_prompt: str, messages: list[dict]) -> str:
             *messages,
         ],
         temperature=0.4,
-        extra_body={
-            "think": False
-        }
+        # extra_body={
+        #     "think": False
+        # }
     )
-    print("___"*20)
-    print(resp.choices[0].message.content)
     return resp.choices[0].message.content
 
 async def embed_text(text: str) -> list[float]:
 
-    client = _get_client()
+    client = _get_client_ollama()
 
     resp = await client.embeddings.create(
         model="nomic-embed-text",
@@ -100,22 +110,21 @@ async def embed_text(text: str) -> list[float]:
 
 if __name__ == "__main__":
     import asyncio
-
+    from datetime import date
 
     async def main():
 
-        # response = await chat_text(
-        #     system_prompt="You are a helpful AI assistant.",
-        #     messages=[
-        #         {
-        #             "role": "user",
-        #             "content": "Explain RAG in 3 sentences."
-        #         }
-        #     ],
-        # )
+        response = await chat_text(
+            system_prompt="You are a helpful AI assistant.",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Explain RAG in 3 sentences."
+                }
+            ],
+        )
 
-        # print(response)
-        from datetime import date
+        print(response)
 
         system_prompt = f"""
         Extract booking details from the user's latest message.

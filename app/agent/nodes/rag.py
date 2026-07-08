@@ -3,9 +3,6 @@ from app.core.config import get_tenant
 from app.services.vectorstore import query_knowledge_base
 from app.utils.llm import chat_text
 
-
-
-
 async def rag_node(state: AgentState) -> dict:
     tenant = get_tenant(state["org_id"], state["branch_id"])
     chunks = await query_knowledge_base(tenant, state["user_message"], top_k=5)

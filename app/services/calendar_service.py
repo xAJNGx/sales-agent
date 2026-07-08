@@ -1,16 +1,13 @@
 """
 Google Calendar integration, scoped per org/branch calendar.
 
-Assumes a service account (with domain-wide delegation, or per-branch OAuth)
+Assumes a service account 
 granted "Make changes to events" access on each branch's calendar. The
 calendar to write to is resolved entirely from `tenant.google_calendar_id` —
 never guessed or defaulted — so a booking can never land on the wrong
 branch's calendar.
-
-google-api-python-client has no native asyncio support, so each blocking
-call is run in a worker thread via asyncio.to_thread.
 """
-from __future__ import annotations
+
 
 import asyncio
 from datetime import datetime, timedelta

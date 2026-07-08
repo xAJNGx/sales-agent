@@ -10,6 +10,7 @@ async def notify_node(state: AgentState) -> dict:
 
     tenant = get_tenant(state["org_id"], state["branch_id"])
     to_email = state.get("lead_slots", {}).get("email")
+    # to_email = "harcoded@gmail.com" #for testing purpose comment this out if you want to check 
     if not to_email:
         return {}
 
@@ -25,8 +26,6 @@ async def notify_node(state: AgentState) -> dict:
         elif state["intent"] == "cancel":
             await email_service.send_cancellation_confirmation(tenant, to_email, service)
     except RuntimeError:
-        # Email is best-effort — booking already succeeded in Calendar/Mongo,
-        # so we don't fail the whole turn if SMTP isn't configured.
         pass
 
     return {}

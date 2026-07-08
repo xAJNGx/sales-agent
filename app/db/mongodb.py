@@ -4,7 +4,7 @@ MongoDB access for leads and appointments (async, via Motor).
 Every read/write is scoped by (org_id, branch_id) so tenants never see or
 overwrite each other's data even though they share one database.
 """
-from __future__ import annotations
+
 
 from datetime import datetime, timezone
 from typing import Optional

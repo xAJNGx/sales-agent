@@ -12,13 +12,23 @@ async def lead_capture_node(state: AgentState) -> dict:
     tenant = get_tenant(state["org_id"], state["branch_id"])
     slots = dict(state.get("lead_slots", {}))
 
-    extract_system = (
-        "Extract any of the following sales-lead fields present in the user's latest message. "
-        "Only include fields actually stated — do not guess or invent values.\n"
-        "Fields: products (list of strings), reason (string - why they want it), "
-        "budget (string), name (string), email (string), phone (string).\n"
-        'Respond ONLY as JSON with just the fields you found, e.g. {"email": "a@b.com"}.'
-    )
+    extract_system = """
+        Extract sales lead details from the user's latest message.
+
+        Return ONLY a valid JSON object.
+
+        Schema:
+        {
+        "products": ["string"],
+        "reason": "string",
+        "budget": "string",
+        "name": "string",
+        "email": "string",
+        "phone": "string"
+        }
+
+        Include only fields explicitly mentioned. Do not guess or invent values. Omit missing fields.
+        """
     extracted = await chat_json(extract_system, state["user_message"])
     for k, v in extracted.items():
         if k == "products" and v:
@@ -39,13 +49,19 @@ async def lead_capture_node(state: AgentState) -> dict:
         return {"lead_slots": slots, "lead_complete": True, "lead_saved": True, "final_response": response}
 
     # Ask conversationally for 1-2 missing fields at a time rather than a checklist dump.
-    persona_system = (
-        f"You are {tenant.sales_rep_name}, a friendly, low-pressure sales rep at "
-        f"{tenant.display_name}. You're chatting with a prospective customer. You already "
-        f"know: {json.dumps(slots)}. You still need: {missing}. Naturally acknowledge what "
-        "they just said, then ask for 1-2 of the missing pieces of information in a warm, "
-        "conversational way — never as a numbered list or form. Keep it to 2-3 sentences."
-    )
+    persona_system = f"""
+        You are {tenant.sales_rep_name}, a friendly sales representative at {tenant.display_name}.
+
+        Your goal is to collect the missing lead information.
+
+        Already collected:
+        {json.dumps(slots)}
+
+        Missing fields:
+        {json.dumps(missing)}
+
+        Acknowledge the user's latest message naturally, then ask for only 1-2 missing fields in a conversational way. Do not ask for information that has already been collected. Do not use a numbered list, bullet points, or a form. Keep your response to 2-3 sentences.
+        """
     response = await chat_text(persona_system, state.get("messages", [])[-4:])
 
     return {"lead_slots": slots, "lead_complete": False, "final_response": response}

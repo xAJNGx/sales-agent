@@ -4,7 +4,7 @@ App settings + tenant registry.
 In production the tenant table would live in Mongo, not hardcoded — but
 keeping it explicit here makes multi-tenant routing easy to follow and test.
 """
-from __future__ import annotations
+
 
 from dataclasses import dataclass
 from functools import lru_cache
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     pinecone_api_key: str = ""
     pinecone_index_name: str = "sales-agent"
-
+    
     mongodb_uri:str = ""
     mongodb_db_name: str = "sales_agent"
     
@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     from_email: str = ""
 
     ollama_base_url: str = "http://localhost:11434/v1"
+    
+    openai_api_key: str = ""
+    openai_model: str = ""
 
 @lru_cache
 def get_settings() -> Settings:
@@ -56,7 +59,7 @@ TENANTS: dict[tuple[str, str], TenantConfig] = {
     ("org_1", "branch_a"): TenantConfig(
         org_id="org_1",
         branch_id="branch_a",
-        display_name="AJNG Corp — KTM Branch",
+        display_name="Cafe 24 AJNG-  KTM Branch",
         pinecone_namespace="org_1__branch_a",
         google_calendar_id="206a991a8081eb369e5cc6e8921b4a212a4667fd538828c0cf4e9d1a2ac04077@group.calendar.google.com",
         from_email="noreply@anujnandagorkhali.com.np",

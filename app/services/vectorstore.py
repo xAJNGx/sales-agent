@@ -8,7 +8,7 @@ tenants:
   2. Metadata `filter` on orgId/branchId — belt-and-braces, and lets us
      later merge namespaces without losing isolation.
 """
-from __future__ import annotations
+
 
 from pinecone import PineconeAsyncio
 

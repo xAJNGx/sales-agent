@@ -1,7 +1,7 @@
 """
 Sends booking confirmation / reschedule / cancellation emails via async SMTP
 """
-from __future__ import annotations
+
 
 from email.mime.text import MIMEText
 
