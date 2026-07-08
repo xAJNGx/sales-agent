@@ -95,9 +95,6 @@ if __name__ == "__main__":
 
 
     async def main():
-        print("=" * 50)
-        print("Testing Ollama Chat Text")
-        print("=" * 50)
 
         response = await chat_text(
             system_prompt="You are a helpful AI assistant.",
