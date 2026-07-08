@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     pinecone_api_key: str = ""
     pinecone_index_name: str = "sales-agent"
 
+    mongodb_uri:str = ""
+    mongodb_db_name: str = "sales_agent"
+    
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""
