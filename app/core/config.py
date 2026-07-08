@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     from_email: str = ""
 
+    ollama_base_url: str = "http://localhost:11434/v1"
 
 @lru_cache
 def get_settings() -> Settings:
