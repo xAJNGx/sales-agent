@@ -16,6 +16,14 @@ A production-ready **multi-tenant conversational sales agent** built with **Fast
 
 ---
 
+## Demo
+
+![Demo](resources/demo.gif)
+
+**Full video:** [demo.mp4](resources/demo.mp4)
+
+---
+
 ## Architecture
 
 ```

@@ -1,6 +1,6 @@
 import re
 
-REQUIRED_LEAD_FIELDS = [
+LEAD_ORDER = [
     "products",
     "reason",
     "budget",
@@ -8,6 +8,7 @@ REQUIRED_LEAD_FIELDS = [
     "email",
     "phone",
 ]
+
 
 _DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _TIME_RE = re.compile(r"\d{2}:\d{2}")

@@ -1,11 +1,10 @@
 import json
 
 from app.agent.state import AgentState
-from app.agent.nodes.constants import REQUIRED_LEAD_FIELDS
+from app.agent.nodes.constants import LEAD_ORDER
 from app.core.config import get_tenant
 from app.db.mongodb import upsert_lead
 from app.utils.llm import chat_json, chat_text
-
 
 
 async def lead_capture_node(state: AgentState) -> dict:
@@ -13,33 +12,70 @@ async def lead_capture_node(state: AgentState) -> dict:
     slots = dict(state.get("lead_slots", {}))
 
     extract_system = """
-        Extract sales lead details from the user's latest message.
+        You extract sales lead information from the conversation.
 
-        Return ONLY a valid JSON object.
+        Return ONLY valid JSON.
 
         Schema:
+
         {
-        "products": ["string"],
-        "reason": "string",
-        "budget": "string",
-        "name": "string",
-        "email": "string",
-        "phone": "string"
+            "products": ["string"],
+            "reason": "string",
+            "budget": "string",
+            "name": "string",
+            "email": "string",
+            "phone": "string"
         }
 
-        Include only fields explicitly mentioned. Do not guess or invent values. Omit missing fields.
-        """
-    extracted = await chat_json(extract_system, state["user_message"])
-    for k, v in extracted.items():
-        if k == "products" and v:
-            slots["products"] = list(set(slots.get("products", []) + (v if isinstance(v, list) else [v])))
-        elif v:
-            slots[k] = v
+        Rules:
 
-    missing = [f for f in REQUIRED_LEAD_FIELDS if not slots.get(f)]
+        - Extract only information explicitly stated.
+        - Do not infer or guess.
+        - Products may contain multiple values.
+        - Budget can be an approximate range.
+        - Ignore assistant messages unless they repeat user-provided information.
+        - Omit missing fields.
+        """
+    conversation = "\n".join(
+        m["content"]
+        for m in state["messages"][-8:]
+        if m["role"] == "user"
+    )
+    extracted = await chat_json(extract_system, conversation)
+    
+    updated = False
+    
+    for k, v in extracted.items():
+        if not v:
+            continue
+
+        if k == "products":
+            existing = set(slots.get("products", []))
+            new = set(v if isinstance(v, list) else [v])
+
+            merged = list(existing | new)
+
+            if merged != slots.get("products", []):
+                slots["products"] = merged
+                updated = True
+
+        else:
+            if slots.get(k) != v:
+                slots[k] = v
+                updated = True
+
+    # Save whenever we learned something new
+    if updated:
+        await upsert_lead(
+            state["org_id"],
+            state["branch_id"],
+            state["session_id"],
+            slots,
+        )
+
+    missing = [f for f in LEAD_ORDER if not slots.get(f)]
 
     if not missing:
-        await upsert_lead(state["org_id"], state["branch_id"], state["session_id"], slots)
         response = (
             f"Perfect, thanks {slots.get('name', '')}! I've got everything I need — "
             f"{tenant.sales_rep_name} from our team will reach out to you at {slots.get('email')} "
@@ -50,17 +86,41 @@ async def lead_capture_node(state: AgentState) -> dict:
 
     # Ask conversationally for 1-2 missing fields at a time rather than a checklist dump.
     persona_system = f"""
-        You are {tenant.sales_rep_name}, a friendly sales representative at {tenant.display_name}.
+        You are {tenant.sales_rep_name}, a professional sales consultant at
+        {tenant.display_name}.
 
-        Your goal is to collect the missing lead information.
+        The customer has shown genuine purchase interest.
+
+        Your goals are:
+
+        1. Understand what they need.
+        2. Recommend the right solution.
+        3. Naturally collect lead information.
+        4. Never sound like a form.
 
         Already collected:
-        {json.dumps(slots)}
+
+        {json.dumps(slots, indent=2)}
 
         Missing fields:
+
         {json.dumps(missing)}
 
-        Acknowledge the user's latest message naturally, then ask for only 1-2 missing fields in a conversational way. Do not ask for information that has already been collected. Do not use a numbered list, bullet points, or a form. Keep your response to 2-3 sentences.
+        Guidelines:
+
+        - Continue the conversation naturally.
+        - Acknowledge what the customer said.
+        - If product interest is still unclear, ask about it first.
+        - Then understand why they need it.
+        - Then discuss budget naturally.
+        - Only after understanding their needs should you ask for name,
+        email, or phone.
+        - Never ask more than two missing pieces of information in one reply.
+        - Avoid sounding like a questionnaire.
+        - If enough information exists to answer the user's question,
+        answer it first before asking for the next missing detail.
+        - Keep replies under 3 short paragraphs.
+        - Be friendly and consultative like a real salesperson.
         """
     response = await chat_text(persona_system, state.get("messages", [])[-4:])
 

@@ -11,23 +11,43 @@ async def intent_router_node(state: AgentState) -> dict:
     """
     history = state.get("messages", [])[-6:]  # small rolling window is enough for intent
     convo = "\n".join(f"{m['role']}: {m['content']}" for m in history)
+    system = """
+        You classify the latest user message into exactly one intent.
 
-    system = (
-        "You classify the latest user message in a sales conversation into exactly one "
-        "intent: info, purchase, booking, reschedule, cancel, or chitchat.\n"
-        "- purchase: user expresses interest in buying/pricing/a product, even implicitly "
-        "(e.g. 'how much does this cost', 'do you have anything for X').\n"
-        "- booking: user wants to schedule a new appointment/demo/call.\n"
-        "- reschedule: user wants to move an existing appointment.\n"
-        "- cancel: user wants to cancel an existing appointment.\n"
-        "- info: general question answerable from a knowledge base.\n"
-        "- chitchat: greetings/small talk with no informational or transactional need.\n"
-        "If the conversation is already mid-way through a lead capture or booking flow, and "
-        "the user's message looks like an answer to the assistant's last question (e.g. just "
-        "a name, email, phone number, date, or time), keep the SAME intent as before rather "
-        "than reclassifying it as chitchat/info.\n"
-        'Respond ONLY as JSON: {"intent": "..."}'
-    )
+        Possible intents:
+        - purchase
+        - booking
+        - reschedule
+        - cancel
+        - info
+        - chitchat
+
+        Choose purchase whenever the user is showing buying intent, even if they are not
+        explicitly asking to buy.
+
+        Examples of purchase:
+        - I need a CRM
+        - Which package is best?
+        - Do you have something for schools?
+        - Can your software do payroll?
+        - What's the price?
+        - Tell me more about this product.
+        - I'm looking for an ERP.
+        - We need accounting software.
+        - I'm comparing solutions.
+
+        Choose info only if the user is clearly asking for general information with no
+        interest in purchasing.
+
+        If the conversation is already collecting lead information, keep purchase intent
+        until the lead is complete.
+
+        Return only JSON:
+        {
+        "intent":"purchase"
+        }
+        """
+    
     result = await chat_json(system, convo)
     intent = result.get("intent", "info")
     if intent not in ("info", "purchase", "booking", "reschedule", "cancel", "chitchat"):
