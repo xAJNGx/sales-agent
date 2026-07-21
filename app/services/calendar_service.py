@@ -15,6 +15,8 @@ from typing import Optional
 
 from app.core.config import TenantConfig, settings
 
+
+#asdasd
 _service = None
 
 def _build_service():
